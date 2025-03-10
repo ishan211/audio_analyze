@@ -17,6 +17,8 @@ Set path of .wav file in line 72: const char* filename = "Audios/file.wav";
 #include <cmath>
 #include <sndfile.h>
 #include <complex>
+#include <sstream>
+#include <bitset>
 
 #define SAMPLE_RATE 44100  // Assuming 44.1 kHz sample rate
 #define CHUNK_SIZE SAMPLE_RATE  // 1 second of audio
@@ -68,7 +70,7 @@ double getDominantFrequency(const CArray& fftResult, int N, double sampleRate) {
 }
 
 int main() {
-    const char* filename = "Audios/sine_01000001_8.wav";
+    const char* filename = "Audios/sine_010010000110010101101100011011000110111100100000010101110110111101110010011011000110010000100001_96.wav";
     SNDFILE* file;
     SF_INFO sfinfo;
 
@@ -127,26 +129,31 @@ int main() {
 
     sf_close(file);
 
-    // Print full msg vector
-    std::cout << "Message: " << std::endl;
-    for (int freq : msg) {
-        std::cout << freq << "";
+    // Print msg vector
+    std::cout << std::endl << "Message: " << std::endl;
+    for (size_t i = 0; i < msg.size(); ++i) {
+        std::cout << msg[i];
+        if ((i + 1) % 8 == 0) { // Make bin readable by adding space
+            std::cout << (char)32;
+        }
     }
     std::cout << std::endl;
-    // Convert vector to string
-    std::stringstream ss;
-    for (size_t i = 0; i < msg.size(); ++i) {
-        ss << msg[i];
+
+    // Convert binary sequence to ASCII characters
+    std::vector<char> asciiMessage;
+    for (size_t i = 0; i + 7 < msg.size(); i += 8) {  // Process 8 bits at a time
+        std::bitset<8> charBits;
+        for (int j = 0; j < 8; ++j) {
+            charBits[j] = msg[i + 7 - j];  // Ensure correct bit order
+        }
+        asciiMessage.push_back(static_cast<char>(charBits.to_ulong()));
     }
-    std::string str_msg = ss.str();
-    
-    // Turn string into int
-    int int_msg = stoi(str_msg);
-    
-    // Turn int into ascii char
-    char char_msg = static_cast<char>(int_msg);
-    
-    std::cout << char_msg << std::endl;
+
+    // Print decoded ASCII message
+    for (char c : asciiMessage) {
+        std::cout << c;
+    }
+    std::cout << std::endl;
 
     return 0;
 }
